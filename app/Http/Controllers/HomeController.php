@@ -10,94 +10,108 @@ use Auth;
 
 class HomeController extends Controller
 {
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('auth');
     }
 
     // Slider
-        // Index
-        public function HomeSlider() {
+    // Index
+    public function HomeSlider()
+    {
+        $sliders = Slider::latest()->get();
+        return view('admin.home.slider.index', compact('sliders'));
+    }
 
-            $sliders = Slider::latest()->get();
-            return view('admin.home.slider.index', compact('sliders'));
+    // Create
+    public function AddSlider()
+    {
+        return view('admin.home.slider.create');
+    }
+
+    // Store
+    public function StoreSlider(Request $request)
+    {
+        $slider_image = $request->file('image');
+        $save_path = 'storage/up_image/slider/';
+
+        // Intervention Pack
+        if (!file_exists($save_path)) {
+            mkdir($save_path, 666, true);
+
+            $name_gen = hexdec(uniqid()).'.'.$slider_image->getClientOriginalExtension();
+            Image::make($slider_image)->resize(1920, 1088)->save('storage/up_image/slider/'.$name_gen);
+                    
+            $last_img = 'storage/up_image/slider/'.$name_gen;
         }
 
-        // Create
-        public function AddSlider() {
-            return view('admin.home.slider.create');
-        }
-
-        // Store
-        public function StoreSlider(Request $request){   
-            $slider_image = $request->file('image');
-       
-            // Intervention Pack
-                $name_gen = hexdec(uniqid()).'.'.$slider_image->getClientOriginalExtension();
-                Image::make($slider_image)->resize(1920,1088)->save('storage/up_image/slider/'.$name_gen);
-
-                $last_img = 'storage/up_image/slider/'.$name_gen;
-            // --
+        $name_gen = hexdec(uniqid()).'.'.$slider_image->getClientOriginalExtension();
+        Image::make($slider_image)->resize(1920, 1088)->save('storage/up_image/slider/'.$name_gen);
+                    
+        $last_img = 'storage/up_image/slider/'.$name_gen;
+        // --
     
-            Slider::insert([
+        Slider::insert([
                 'title' => $request->title,
                 'description' => $request->description,
                 'image' => $last_img,
                 'created_at' => Carbon::now()
             ]);
     
-            return Redirect()->route('home.slider')->with('success', 'Slider Inserted Successfully');
-        }
+        return Redirect()->route('home.slider')->with('success', 'Slider Inserted Successfully');
+    }
 
-        // Edit
-        public function EditSlider($id) {
-            $sliders = Slider::find($id);
-            return view('admin.home.slider.edit', compact('sliders'));
-        }
+    // Edit
+    public function EditSlider($id)
+    {
+        $sliders = Slider::find($id);
+        return view('admin.home.slider.edit', compact('sliders'));
+    }
 
-        // Update
-        public function UpdateSlider(Request $request, $id) {
-            $old_image = $request->old_image;
-            $image = $request->file('image');
+    // Update
+    public function UpdateSlider(Request $request, $id)
+    {
+        $old_image = $request->old_image;
+        $image = $request->file('image');
 
-            if($image) {
-                $name_gen = hexdec(uniqid());
-                $img_ext = strtolower($image->getClientOriginalExtension());
-                $img_name = $name_gen.'.'.$img_ext;
-                $up_location = 'storage/up_image/slider/';
-                $last_img = $up_location.$img_name;
-                $image->move($up_location, $img_name);
+        if ($image) {
+            $name_gen = hexdec(uniqid());
+            $img_ext = strtolower($image->getClientOriginalExtension());
+            $img_name = $name_gen.'.'.$img_ext;
+            $up_location = 'storage/up_image/slider/';
+            $last_img = $up_location.$img_name;
+            $image->move($up_location, $img_name);
 
-                unlink($old_image);
+            unlink($old_image);
                 
-                Slider::find($id)->update([
+            Slider::find($id)->update([
                     'title' => $request->title,
                     'description' => $request->description,
                     'image' => $last_img,
                     'created_at' => Carbon::now()
                 ]);
             
-                return Redirect()->route('home.slider')->with('success', 'Slider Updated Successfully');
-            
-            } else {
-                Slider::find($id)->update([
+            return Redirect()->route('home.slider')->with('success', 'Slider Updated Successfully');
+        } else {
+            Slider::find($id)->update([
                     'title' => $request->title,
                     'description' => $request->description,
                     'created_at' => Carbon::now()
                 ]);
             
-                return Redirect()->route('home.slider')->with('success', 'Slider Updated Successfully');
-            }
+            return Redirect()->route('home.slider')->with('success', 'Slider Updated Successfully');
         }
+    }
 
-        // Destroy
-        public function DestroySlider(Request $request, $id) {
-            $image = Slider::find($id);
-            $old_image = $image->image;
-            unlink($old_image);
+    // Destroy
+    public function DestroySlider(Request $request, $id)
+    {
+        $image = Slider::find($id);
+        $old_image = $image->image;
+        unlink($old_image);
 
-            Slider::find($id)->delete();
-            return Redirect()->route('home.slider')->with('success', 'Slider Delete Successfully');
-        }
+        Slider::find($id)->delete();
+        return Redirect()->route('home.slider')->with('success', 'Slider Delete Successfully');
+    }
     // -----
-     
 }

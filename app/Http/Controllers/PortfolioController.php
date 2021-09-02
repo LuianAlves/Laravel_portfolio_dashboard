@@ -11,12 +11,13 @@ use Auth;
 
 class PortfolioController extends Controller
 {
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('auth');
     }
 
-    public function HomePortfolio() {
-
+    public function HomePortfolio()
+    {
         $portfolio = Portofolio::latest()->get();
         $trachList = Portofolio::onlyTrashed()->latest()->get(); // SoftDelete
         
@@ -25,12 +26,21 @@ class PortfolioController extends Controller
         return view('admin.home.portfolio.index', compact('portfolio', 'categories', 'trachList'));
     }
 
-    public function Store(Request $request){
-        
+    public function Store(Request $request)
+    {
         $portfolio_image = $request->file('image');
+        $save_path = 'storage/up_image/portfolio/port_card/';
 
+        // Intervention Pack
+        if (!file_exists($save_path)) {
+            mkdir($save_path, 666, true);
+
+            $name_gen = hexdec(uniqid()).'.'.$portfolio_image->getClientOriginalExtension();
+            Image::make($portfolio_image)->resize(1920, 1080)->save('storage/up_image/portfolio/port_card/'.$name_gen);
+            $last_img = 'storage/up_image/portfolio/port_card/'.$name_gen;
+        }
         $name_gen = hexdec(uniqid()).'.'.$portfolio_image->getClientOriginalExtension();
-        Image::make($portfolio_image)->resize(1920,1080)->save('storage/up_image/portfolio/port_card/'.$name_gen);
+        Image::make($portfolio_image)->resize(1920, 1080)->save('storage/up_image/portfolio/port_card/'.$name_gen);
         $last_img = 'storage/up_image/portfolio/port_card/'.$name_gen;
 
         Portofolio::insert([
@@ -44,18 +54,20 @@ class PortfolioController extends Controller
         return Redirect()->route('home.portfolio')->with('success', 'Portfolio Card Inserted Successfully');
     }
 
-    public function Edit($id) {
+    public function Edit($id)
+    {
         $portfolio = Portofolio::find($id);
         $categories = Category::latest()->get();
 
         return view('admin.home.portfolio.edit', compact('portfolio', 'categories'));
     }
 
-    public function Update(Request $request, $id) {
+    public function Update(Request $request, $id)
+    {
         $old_image = $request->old_image;
         $image = $request->file('image');
 
-        if($image) {
+        if ($image) {
             $name_gen = hexdec(uniqid());
             $img_ext = strtolower($image->getClientOriginalExtension());
             $img_name = $name_gen.'.'.$img_ext;
@@ -74,7 +86,6 @@ class PortfolioController extends Controller
             ]);
 
             return Redirect()->route('home.portfolio')->with('success', 'Portfolio Card Updated Successfully');
-
         } else {
             Portofolio::find($id)->update([
                 'category_id' => $request->category_id,
@@ -88,21 +99,24 @@ class PortfolioController extends Controller
     }
 
     // SoftDelete
-    public function SoftDelete($id) {
+    public function SoftDelete($id)
+    {
         $softDelete = Portofolio::find($id)->delete();
 
         return Redirect()->back()->with('deleted', 'Portfolio Card Unavailable');
     }
 
     // Restore
-    public function Restore($id) {
+    public function Restore($id)
+    {
         $restore = Portofolio::withTrashed()->find($id)->restore();
 
         return Redirect()->back()->with('restore', 'Portfolio Card Restored');
     }
 
     // Delete
-    public function Destroy($id) {
+    public function Destroy($id)
+    {
         $delete = Portofolio::onlyTrashed()->find($id)->forceDelete();
 
         return Redirect()->back()->with('deleted', 'Portfolio Card Permanently Deleted');

@@ -11,20 +11,21 @@ use Auth;
 
 class BrandController extends Controller
 {
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('auth');
     }
     
     // Index
-    public function AllBrand() {
-
+    public function AllBrand()
+    {
         $brands = Brand::latest()->paginate(10);
-        return view ('admin.brand.index', compact('brands'));
-
+        return view('admin.brand.index', compact('brands'));
     }
 
     // Store
-    public function StoreBrand(Request $request) {
+    public function StoreBrand(Request $request)
+    {
         $validatedData = $request->validate(
             [
                 'brand_name' => 'required|unique:brands|min:4',
@@ -40,18 +41,18 @@ class BrandController extends Controller
 
         $brand_image = $request->file('brand_image');
 
-        // Utilizando o Intervention Pack não precisa
-        // $name_gen = hexdec(uniqid());
-        // $img_ext = strtolower($brand_image->getClientOriginalExtension());
-        // $img_name = $name_gen.'.'.$img_ext;
-        // $up_location = 'storage/up_image/brand/';
-        // $last_img = $up_location.$img_name;
-        // $brand_image->move($up_location, $img_name);
-
+        $save_path = 'storage/up_image/brand/';
         // Intervention Pack
+        if (!file_exists($save_path)) {
+            mkdir($save_path, 666, true);
+
             $name_gen = hexdec(uniqid()).'.'.$brand_image->getClientOriginalExtension();
-            Image::make($brand_image)->resize(300,200)->save('storage/up_image/brand/'.$name_gen);
+            Image::make($brand_image)->resize(300, 200)->save('storage/up_image/brand/'.$name_gen);
             $last_img = 'storage/up_image/brand/'.$name_gen;
+        }
+        $name_gen = hexdec(uniqid()).'.'.$brand_image->getClientOriginalExtension();
+        Image::make($brand_image)->resize(300, 200)->save('storage/up_image/brand/'.$name_gen);
+        $last_img = 'storage/up_image/brand/'.$name_gen;
         // --
 
         Brand::insert([
@@ -69,13 +70,15 @@ class BrandController extends Controller
     }
 
     // Edit
-    public function Edit($id) {
+    public function Edit($id)
+    {
         $brands = Brand::find($id);
-        return view ('admin.brand.edit', compact('brands'));
+        return view('admin.brand.edit', compact('brands'));
     }
 
     // Update
-    public function Update(Request $request, $id){
+    public function Update(Request $request, $id)
+    {
         $validatedData = $request->validate(
             [
                 'brand_name' => 'required|min:4',
@@ -91,8 +94,7 @@ class BrandController extends Controller
         $old_image = $request->old_image;
         $brand_image = $request->file('brand_image');
 
-        if($brand_image) {
-            
+        if ($brand_image) {
             $name_gen = hexdec(uniqid());
             $img_ext = strtolower($brand_image->getClientOriginalExtension());
             $img_name = $name_gen.'.'.$img_ext;
@@ -108,7 +110,6 @@ class BrandController extends Controller
             ]);
             
             return Redirect()->route('all.brand')->with('success', 'Brand Updated Successfully');
-
         } else {
             Brand::find($id)->update([
                 'brand_name' => $request->brand_name,
@@ -120,7 +121,8 @@ class BrandController extends Controller
     }
 
     // Destroy
-    public function Destroy($id) {
+    public function Destroy($id)
+    {
         $image = Brand::find($id);
         $old_image = $image->brand_image;
         unlink($old_image);
@@ -131,43 +133,38 @@ class BrandController extends Controller
 
 
     // Multiplics Images
-        // Index
-        public function Multiplic(){
+    // Index
+    public function Multiplic()
+    {
+        $images = Multiplic::all();
+        return view('admin.multiplic.index', compact('images'));
+    }
 
-            $images = Multiplic::all();
-            return view('admin.multiplic.index', compact('images'));
-        }
+    // Store
+    public function StoreImage(Request $request)
+    {
+        $image = $request->file('image');
 
-        // Store
-        public function StoreImage(Request $request) {
-            $image = $request->file('image');
-
-            foreach($image as $multi_image) {   // Criando Loop para adicionar várias imagens       
-                // Intervention Pack
-                $name_gen = hexdec(uniqid()).'.'.$multi_image->getClientOriginalExtension();
-                Image::make($multi_image)->resize(300,200)->save('storage/up_image/multi/'.$name_gen);
-                $last_img = 'storage/up_image/multi/'.$name_gen;
-                // --
+        foreach ($image as $multi_image) {   // Criando Loop para adicionar várias imagens
+            // Intervention Pack
+            $name_gen = hexdec(uniqid()).'.'.$multi_image->getClientOriginalExtension();
+            Image::make($multi_image)->resize(300, 200)->save('storage/up_image/multi/'.$name_gen);
+            $last_img = 'storage/up_image/multi/'.$name_gen;
+            // --
                 
-                Multiplic::insert([
+            Multiplic::insert([
                     'image' => $last_img,
                     'created_at' => Carbon::now()
-                ]);           
-            }
-
-            return Redirect()->back()->with('success', 'Brand Inserted Successfully');
+                ]);
         }
+
+        return Redirect()->back()->with('success', 'Brand Inserted Successfully');
+    }
     
     // Logout
-    public function Logout() {
+    public function Logout()
+    {
         Auth::logout();
         return Redirect()->route('login')->with('success', 'User Logout');
     }
-
-    
-    
-    
-    
-    
-    
 }
