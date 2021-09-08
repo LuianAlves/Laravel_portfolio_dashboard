@@ -21,7 +21,7 @@
 
     $ php artisan key:generate
 
-#Configurar o o arquivo .env com base no seu Banco de Dados
+#Configurar o o arquivo .env com base no seu Banco de Dados e SMTP
 
 
 #Execute as migrations
